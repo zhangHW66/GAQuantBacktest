@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Text?>
+<?import javafx.scene.text.TextFlow?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.gaquant.controller.BacktestController"
+      stylesheets="@../css/style.css" spacing="12">
+
+    <padding><Insets top="12" right="16" bottom="12" left="16"/></padding>
+
+    <!-- 标题 -->
+    <HBox spacing="16" alignment="CENTER_LEFT">
+        <Label text="回测结果报告" styleClass="header"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="导出报告" onAction="#onExportReport"/>
+        <Button text="返回主界面" onAction="#onBackToMain"/>
+    </HBox>
+
+    <!-- ====== 绩效指标卡片 ====== -->
+    <HBox spacing="16" alignment="CENTER">
+        <VBox styleClass="metric-card" alignment="CENTER" minWidth="120">
+            <Label text="累计收益" styleClass="metric-label"/>
+            <Label fx:id="lblCumReturn" text="--" styleClass="metric-value"/>
+        </VBox>
+        <VBox styleClass="metric-card" alignment="CENTER" minWidth="120">
+            <Label text="年化收益" styleClass="metric-label"/>
+            <Label fx:id="lblAnnualReturn" text="--" styleClass="metric-value"/>
+        </VBox>
+        <VBox styleClass="metric-card" alignment="CENTER" minWidth="120">
+            <Label text="最大回撤" styleClass="metric-label"/>
+            <Label fx:id="lblMaxDrawdown" text="--" styleClass="metric-value negative"/>
+        </VBox>
+        <VBox styleClass="metric-card" alignment="CENTER" minWidth="120">
+            <Label text="胜率" styleClass="metric-label"/>
+            <Label fx:id="lblWinRate" text="--" styleClass="metric-value"/>
+        </VBox>
+        <VBox styleClass="metric-card" alignment="CENTER" minWidth="120">
+            <Label text="盈亏比" styleClass="metric-label"/>
+            <Label fx:id="lblPLRatio" text="--" styleClass="metric-value"/>
+        </VBox>
+        <VBox styleClass="metric-card" alignment="CENTER" minWidth="120">
+            <Label text="夏普率" styleClass="metric-label"/>
+            <Label fx:id="lblSharpe" text="--" styleClass="metric-value"/>
+        </VBox>
+        <VBox styleClass="metric-card" alignment="CENTER" minWidth="120">
+            <Label text="交易次数" styleClass="metric-label"/>
+            <Label fx:id="lblTradeCount" text="--" styleClass="metric-value"/>
+        </VBox>
+        <VBox styleClass="metric-card" alignment="CENTER" minWidth="120">
+            <Label text="平均持仓(天)" styleClass="metric-label"/>
+            <Label fx:id="lblAvgHoldDays" text="--" styleClass="metric-value"/>
+        </VBox>
+    </HBox>
+
+    <Separator/>
+
+    <!-- ====== 图表区 ====== -->
+    <TabPane tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+
+        <!-- 净值曲线 -->
+        <Tab text="净值曲线">
+            <BorderPane>
+                <center>
+                    <StackPane fx:id="equityChartPane" styleClass="chart-area"
+                               minHeight="250" VBox.vgrow="ALWAYS"/>
+                </center>
+            </BorderPane>
+        </Tab>
+
+        <!-- 收益曲线 -->
+        <Tab text="收益曲线">
+            <BorderPane>
+                <center>
+                    <StackPane fx:id="returnChartPane" styleClass="chart-area"
+                               minHeight="250" VBox.vgrow="ALWAYS"/>
+                </center>
+            </BorderPane>
+        </Tab>
+
+        <!-- 回撤曲线 -->
+        <Tab text="回撤曲线">
+            <BorderPane>
+                <center>
+                    <StackPane fx:id="drawdownChartPane" styleClass="chart-area"
+                               minHeight="250" VBox.vgrow="ALWAYS"/>
+                </center>
+            </BorderPane>
+        </Tab>
+
+        <!-- 月度收益热力图 -->
+        <Tab text="月度收益">
+            <BorderPane>
+                <center>
+                    <StackPane fx:id="monthlyChartPane" styleClass="chart-area"
+                               minHeight="250" VBox.vgrow="ALWAYS"/>
+                </center>
+            </BorderPane>
+        </Tab>
+
+    </TabPane>
+
+    <!-- ====== 最优策略信息 ====== -->
+    <TitledPane text="最优策略详情" expanded="false">
+        <HBox spacing="24">
+            <padding><Insets top="8" right="12" bottom="8" left="12"/></padding>
+
+            <VBox spacing="4" prefWidth="200">
+                <Label text="使用的技术指标:" styleClass="metric-label"/>
+                <TextFlow fx:id="txtStrategyIndicators">
+                    <Text text="--" fill="#b2bec3"/>
+                </TextFlow>
+            </VBox>
+            <VBox spacing="4" prefWidth="150">
+                <Label text="买入阈值:" styleClass="metric-label"/>
+                <Label fx:id="lblStrategyBuyThreshold" text="--"/>
+                <Label text="卖出阈值:" styleClass="metric-label"/>
+                <Label fx:id="lblStrategySellThreshold" text="--"/>
+            </VBox>
+            <VBox spacing="4" prefWidth="250">
+                <Label text="指标权重分配:" styleClass="metric-label"/>
+                <TextFlow fx:id="txtStrategyWeights">
+                    <Text text="--" fill="#b2bec3"/>
+                </TextFlow>
+            </VBox>
+            <VBox spacing="4" prefWidth="150">
+                <Label text="最佳适应度:" styleClass="metric-label"/>
+                <Label fx:id="lblStrategyFitness" text="--" styleClass="label positive"/>
+                <Label text="收敛代数:" styleClass="metric-label"/>
+                <Label fx:id="lblStrategyGen" text="--"/>
+            </VBox>
+        </HBox>
+    </TitledPane>
+
+    <!-- ====== 交易记录表 ====== -->
+    <TitledPane text="交易记录明细" expanded="true" VBox.vgrow="ALWAYS">
+        <BorderPane>
+            <center>
+                <TableView fx:id="tradeTable" VBox.vgrow="ALWAYS">
+                    <columns>
+                        <TableColumn text="序号" prefWidth="45" fx:id="colIndex"/>
+                        <TableColumn text="买入日期" prefWidth="105" fx:id="colBuyDate"/>
+                        <TableColumn text="买入价" prefWidth="80" fx:id="colBuyPrice"/>
+                        <TableColumn text="卖出日期" prefWidth="105" fx:id="colSellDate"/>
+                        <TableColumn text="卖出价" prefWidth="80" fx:id="colSellPrice"/>
+                        <TableColumn text="持仓天数" prefWidth="70" fx:id="colHoldDays"/>
+                        <TableColumn text="盈亏额" prefWidth="85" fx:id="colProfit"/>
+                        <TableColumn text="收益率" prefWidth="80" fx:id="colProfitRate"/>
+                        <TableColumn text="累计收益率" prefWidth="90" fx:id="colCumReturn"/>
+                    </columns>
+                </TableView>
+            </center>
+        </BorderPane>
+    </TitledPane>
+
+</VBox>

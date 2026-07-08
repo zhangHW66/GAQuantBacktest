@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Text?>
+<?import javafx.scene.text.TextFlow?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.gaquant.controller.MainController"
+      stylesheets="@../css/style.css">
+
+    <!-- ============ 菜单栏 ============ -->
+    <MenuBar>
+        <Menu text="文件">
+            <MenuItem text="导入CSV数据..." onAction="#onImportCsv"/>
+            <MenuItem text="导出结果..." onAction="#onExportResult"/>
+            <SeparatorMenuItem/>
+            <MenuItem text="退出" onAction="#onExit"/>
+        </Menu>
+        <Menu text="分析">
+            <MenuItem text="运行遗传算法" onAction="#onRunGA"/>
+            <MenuItem text="滚动预测" onAction="#onRollingPredict"/>
+            <MenuItem text="运行回测" onAction="#onRunBacktest"/>
+            <SeparatorMenuItem/>
+            <MenuItem text="参数配置..." onAction="#onOpenConfig"/>
+        </Menu>
+        <Menu text="帮助">
+            <MenuItem text="使用说明" onAction="#onHelp"/>
+            <MenuItem text="关于" onAction="#onAbout"/>
+        </Menu>
+    </MenuBar>
+
+    <!-- ============ 工具栏 ============ -->
+    <ToolBar>
+        <HBox spacing="8" alignment="CENTER_LEFT">
+            <Button text="导入CSV" styleClass="primary" onAction="#onImportCsv"/>
+            <Button text="参数配置" onAction="#onOpenConfig"/>
+            <Separator orientation="VERTICAL"/>
+            <Button text="运行GA优化" onAction="#onRunGA"/>
+            <Button text="滚动预测" onAction="#onRollingPredict"/>
+            <Button text="回测分析" styleClass="success" onAction="#onRunBacktest"/>
+            <Separator orientation="VERTICAL"/>
+            <Button text="一键运行" styleClass="primary" onAction="#onRunAll"/>
+        </HBox>
+    </ToolBar>
+
+    <!-- ============ 主体：左侧栏 + 中央区 ============ -->
+    <SplitPane dividerPositions="0.22" VBox.vgrow="ALWAYS">
+
+        <!-- ====== 左侧面板 ====== -->
+        <VBox spacing="10" minWidth="190" prefWidth="210">
+            <padding><Insets top="12" right="10" bottom="12" left="10"/></padding>
+
+            <Label text="操作流程" styleClass="sub-header"/>
+
+            <!-- 步骤按钮 -->
+            <Button text="① 导入CSV数据" maxWidth="Infinity" onAction="#onImportCsv"/>
+            <Button text="② 配置参数" maxWidth="Infinity" onAction="#onOpenConfig"/>
+            <Button text="③ 运行GA优化" maxWidth="Infinity" onAction="#onRunGA"/>
+            <Button text="④ 回测分析" maxWidth="Infinity" styleClass="success" onAction="#onRunBacktest"/>
+
+            <Separator/>
+
+            <!-- P1 核心指标 -->
+            <Label text="P1 核心指标" styleClass="sub-header"/>
+            <CheckBox text="MA 移动平均线" fx:id="chkMA" selected="true"/>
+            <CheckBox text="MACD" fx:id="chkMACD" selected="true"/>
+            <CheckBox text="RSI 相对强弱" fx:id="chkRSI" selected="true"/>
+            <CheckBox text="KDJ 随机指标" fx:id="chkKDJ" selected="true"/>
+            <CheckBox text="BOLL 布林带" fx:id="chkBOLL" selected="true"/>
+
+            <!-- P2 扩展指标（折叠） -->
+            <TitledPane text="P2 扩展指标" collapsible="true" expanded="false"
+                        style="-fx-font-size:12px;">
+                <VBox spacing="4">
+                    <padding><Insets top="4" right="4" bottom="4" left="4"/></padding>
+                    <CheckBox text="ATR 均幅指标" fx:id="chkATR"/>
+                    <CheckBox text="CCI 商品通道" fx:id="chkCCI"/>
+                </VBox>
+            </TitledPane>
+
+            <Separator/>
+
+            <!-- 当前状态 -->
+            <Label text="当前状态" styleClass="sub-header"/>
+            <VBox styleClass="metric-card" spacing="4">
+                <Label text="数据:" fx:id="lblDataStatus" textFill="#b2bec3"/>
+                <Label text="GA:" fx:id="lblGAStatus" textFill="#b2bec3"/>
+                <Label text="回测:" fx:id="lblBacktestStatus" textFill="#b2bec3"/>
+                <ProgressBar fx:id="gaProgress" prefWidth="180" progress="0" visible="false"/>
+            </VBox>
+        </VBox>
+
+        <!-- ====== 中央区域 ====== -->
+        <VBox spacing="0" VBox.vgrow="ALWAYS">
+
+            <!-- 绩效指标栏（横排8个卡片） -->
+            <HBox fx:id="metricsBar" spacing="10" alignment="CENTER"
+                  style="-fx-background-color:#16213e; -fx-padding:10px 14px;">
+                <VBox styleClass="metric-card" alignment="CENTER">
+                    <Label text="累计收益" styleClass="metric-label"/>
+                    <Label fx:id="lblCumReturn" text="+68.52%" styleClass="metric-value positive"/>
+                </VBox>
+                <VBox styleClass="metric-card" alignment="CENTER">
+                    <Label text="年化收益" styleClass="metric-label"/>
+                    <Label fx:id="lblAnnualReturn" text="+18.35%" styleClass="metric-value positive"/>
+                </VBox>
+                <VBox styleClass="metric-card" alignment="CENTER">
+                    <Label text="最大回撤" styleClass="metric-label"/>
+                    <Label fx:id="lblMaxDrawdown" text="-12.40%" styleClass="metric-value negative"/>
+                </VBox>
+                <VBox styleClass="metric-card" alignment="CENTER">
+                    <Label text="胜率" styleClass="metric-label"/>
+                    <Label fx:id="lblWinRate" text="62.50%" styleClass="metric-value"/>
+                </VBox>
+                <VBox styleClass="metric-card" alignment="CENTER">
+                    <Label text="盈亏比" styleClass="metric-label"/>
+                    <Label fx:id="lblPLRatio" text="2.31" styleClass="metric-value"/>
+                </VBox>
+                <VBox styleClass="metric-card" alignment="CENTER">
+                    <Label text="夏普率" styleClass="metric-label"/>
+                    <Label fx:id="lblSharpeRatio" text="1.85" styleClass="metric-value"/>
+                </VBox>
+                <VBox styleClass="metric-card" alignment="CENTER">
+                    <Label text="交易次数" styleClass="metric-label"/>
+                    <Label fx:id="lblTradeCount" text="28" styleClass="metric-value"/>
+                </VBox>
+                <VBox styleClass="metric-card" alignment="CENTER">
+                    <Label text="最优适应度" styleClass="metric-label"/>
+                    <Label fx:id="lblBestFitness" text="2.856" styleClass="metric-value"/>
+                </VBox>
+            </HBox>
+
+            <!-- 图表选项卡 -->
+            <TabPane fx:id="tabPane" VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE">
+
+                <!-- K线 + MA 叠加 -->
+                <Tab text="K线图 &amp; 技术指标">
+                    <BorderPane>
+                        <center>
+                            <StackPane fx:id="klineChartPane" styleClass="chart-area"
+                                       minHeight="250" minWidth="500">
+                                <Label fx:id="klinePlaceholder"
+                                       text="K线图已就绪 (测试数据: 2020-2025, 共1258条)"
+                                       style="-fx-text-fill:#b2bec3; -fx-font-size:14px;"/>
+                            </StackPane>
+                        </center>
+                        <bottom>
+                            <HBox spacing="8" alignment="CENTER_LEFT"
+                                  style="-fx-background-color:#16213e; -fx-padding:6px 12px;">
+                                <Label text="周期:" style="font-size:12px;"/>
+                                <ComboBox fx:id="cboKlinePeriod" prefWidth="100" value="日线"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Label text="叠加: MA5  MA10  MA20  MA60  BOLL(20,2)" style="font-size:11px;"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Button text="放大" onAction="#onZoomIn"/>
+                                <Button text="缩小" onAction="#onZoomOut"/>
+                            </HBox>
+                        </bottom>
+                    </BorderPane>
+                </Tab>
+
+                <!-- 指标详情 -->
+                <Tab text="MACD / RSI / KDJ">
+                    <TabPane fx:id="indicatorTabPane" tabClosingPolicy="UNAVAILABLE" side="BOTTOM">
+                        <Tab text="MACD">
+                            <StackPane fx:id="macdChartPane" styleClass="chart-area" minHeight="250"/>
+                        </Tab>
+                        <Tab text="RSI">
+                            <StackPane fx:id="rsiChartPane" styleClass="chart-area" minHeight="250"/>
+                        </Tab>
+                        <Tab text="KDJ">
+                            <StackPane fx:id="kdjChartPane" styleClass="chart-area" minHeight="250"/>
+                        </Tab>
+                    </TabPane>
+                </Tab>
+
+                <!-- 回测结果 -->
+                <Tab text="回测曲线">
+                    <TabPane tabClosingPolicy="UNAVAILABLE" side="BOTTOM">
+                        <Tab text="净值曲线">
+                            <StackPane fx:id="equityChartPane" styleClass="chart-area" minHeight="250"/>
+                        </Tab>
+                        <Tab text="回撤曲线">
+                            <StackPane fx:id="drawdownChartPane" styleClass="chart-area" minHeight="250"/>
+                        </Tab>
+                    </TabPane>
+                </Tab>
+
+                <!-- 交易记录 -->
+                <Tab text="交易记录">
+                    <TableView fx:id="tradeTable" VBox.vgrow="ALWAYS">
+                        <columns>
+                            <TableColumn text="序号" prefWidth="45"/>
+                            <TableColumn text="买入日期" prefWidth="105"/>
+                            <TableColumn text="买入价" prefWidth="80"/>
+                            <TableColumn text="卖出日期" prefWidth="105"/>
+                            <TableColumn text="卖出价" prefWidth="80"/>
+                            <TableColumn text="盈亏额" prefWidth="80"/>
+                            <TableColumn text="收益率" prefWidth="80"/>
+                            <TableColumn text="持仓天数" prefWidth="70"/>
+                        </columns>
+                    </TableView>
+                </Tab>
+            </TabPane>
+
+            <!-- 日志 -->
+            <TitledPane text="运行日志" collapsible="true" expanded="true" maxHeight="130">
+                <TextArea fx:id="txtLog" editable="false" wrapText="true"
+                          prefRowCount="5" maxHeight="110"/>
+            </TitledPane>
+        </VBox>
+    </SplitPane>
+
+    <!-- ============ 状态栏 ============ -->
+    <HBox styleClass="status-bar" spacing="16" alignment="CENTER_LEFT">
+        <Label fx:id="lblStatus" text="就绪 - 已加载测试数据(2020-2025, 1258条行情)"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label text="| 当前信号:" style="font-size:11px;"/>
+        <Label fx:id="lblSignal" text="买入 ▲" style="-fx-text-fill:#00b894; -fx-font-weight:bold;"/>
+        <Label fx:id="lblSignalScore" text="得分:0.78" style="font-size:11px;"/>
+        <Separator orientation="VERTICAL"/>
+        <Label text="策略: MA+MACD+RSI+BOLL | 买入阈值:0.72 | 卖出阈值:-0.35"
+               style="font-size:11px;"/>
+    </HBox>
+
+</VBox>
