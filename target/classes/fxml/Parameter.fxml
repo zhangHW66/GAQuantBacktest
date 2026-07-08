@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.gaquant.controller.ParameterController"
+      stylesheets="@../css/style.css" spacing="14"
+      prefWidth="460" prefHeight="520">
+
+    <padding><Insets top="16" right="20" bottom="16" left="20"/></padding>
+
+    <Label text="参数配置" styleClass="header"/>
+
+    <!-- GA参数 -->
+    <TitledPane text="遗传算法参数" expanded="true">
+        <GridPane hgap="14" vgap="10">
+            <padding><Insets top="10" right="14" bottom="10" left="14"/></padding>
+
+            <Label text="种群数量:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+            <Spinner fx:id="spnPopulationSize" GridPane.rowIndex="0" GridPane.columnIndex="1"
+                     min="20" max="500" initialValue="100" editable="true" prefWidth="110"/>
+
+            <Label text="最大迭代:" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+            <Spinner fx:id="spnMaxIterations" GridPane.rowIndex="1" GridPane.columnIndex="1"
+                     min="10" max="500" initialValue="50" editable="true" prefWidth="110"/>
+
+            <Label text="交叉率:" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+            <HBox spacing="8" GridPane.rowIndex="2" GridPane.columnIndex="1">
+                <Slider fx:id="sldCrossoverRate" min="0.1" max="1.0" value="0.80"
+                        prefWidth="140" showTickLabels="true" majorTickUnit="0.2" blockIncrement="0.05"/>
+                <Label fx:id="lblCrossoverRate" text="0.80" prefWidth="36"/>
+            </HBox>
+
+            <Label text="变异率:" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+            <HBox spacing="8" GridPane.rowIndex="3" GridPane.columnIndex="1">
+                <Slider fx:id="sldMutationRate" min="0.01" max="0.50" value="0.10"
+                        prefWidth="140" showTickLabels="true" majorTickUnit="0.1" blockIncrement="0.01"/>
+                <Label fx:id="lblMutationRate" text="0.10" prefWidth="36"/>
+            </HBox>
+        </GridPane>
+    </TitledPane>
+
+    <!-- 回测参数 -->
+    <TitledPane text="回测参数" expanded="true">
+        <GridPane hgap="14" vgap="10">
+            <padding><Insets top="10" right="14" bottom="10" left="14"/></padding>
+
+            <Label text="初始资金:" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+            <Spinner fx:id="spnInitCapital" GridPane.rowIndex="0" GridPane.columnIndex="1"
+                     min="10000" max="100000000" initialValue="100000" editable="true"
+                     prefWidth="110" amountToStepBy="10000"/>
+
+            <Label text="手续费率 (%):" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+            <Spinner fx:id="spnCommission" GridPane.rowIndex="1" GridPane.columnIndex="1"
+                     min="0" max="1.0" initialValue="0.03" editable="true"
+                     prefWidth="110" amountToStepBy="0.01"/>
+
+            <Label text="滑点 (%):" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+            <Spinner fx:id="spnSlippage" GridPane.rowIndex="2" GridPane.columnIndex="1"
+                     min="0" max="1.0" initialValue="0.01" editable="true"
+                     prefWidth="110" amountToStepBy="0.01"/>
+        </GridPane>
+    </TitledPane>
+
+    <!-- 滚动窗口 -->
+    <TitledPane text="滚动窗口" expanded="true">
+        <GridPane hgap="14" vgap="10">
+            <padding><Insets top="10" right="14" bottom="10" left="14"/></padding>
+
+            <Label text="训练周期(月):" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+            <Spinner fx:id="spnTrainPeriod" GridPane.rowIndex="0" GridPane.columnIndex="1"
+                     min="1" max="24" initialValue="3" editable="true" prefWidth="110"/>
+
+            <Label text="测试周期(月):" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+            <Spinner fx:id="spnTestPeriod" GridPane.rowIndex="1" GridPane.columnIndex="1"
+                     min="1" max="12" initialValue="1" editable="true" prefWidth="110"/>
+        </GridPane>
+    </TitledPane>
+
+    <!-- 按钮 -->
+    <HBox spacing="12" alignment="CENTER_RIGHT">
+        <Button text="恢复默认" onAction="#onResetDefault"/>
+        <Button text="保存" styleClass="primary" onAction="#onSave"/>
+    </HBox>
+
+</VBox>
