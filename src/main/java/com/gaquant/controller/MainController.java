@@ -15,6 +15,7 @@ import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.util.StringConverter;
 
 import java.io.File;
 import java.time.LocalDate;
@@ -28,7 +29,7 @@ import java.util.*;
 public class MainController {
 
     // 左侧
-    @FXML private CheckBox chkMA, chkMACD, chkRSI, chkKDJ, chkBOLL, chkATR, chkCCI;
+    @FXML private CheckBox chkMA, chkMACD, chkRSI, chkKDJ, chkBOLL, chkATR, chkCCI, chkOBV, chkMomentum;
     @FXML private Label lblDataStatus, lblGAStatus, lblBacktestStatus;
     @FXML private ProgressBar gaProgress;
 
@@ -38,13 +39,20 @@ public class MainController {
 
     // 图表
     @FXML private TabPane tabPane;
-    @FXML private StackPane klineChartPane, macdChartPane, rsiChartPane, kdjChartPane;
+    @FXML private StackPane klineChartPane, macdChartPane, rsiChartPane, kdjChartPane, bollChartPane;
     @FXML private StackPane equityChartPane, drawdownChartPane;
     @FXML private Label klinePlaceholder;
     @FXML private ComboBox<String> cboKlinePeriod;
 
     // 表格
     @FXML private TableView<TradeRecord> tradeTable;
+    @FXML private TableView<?> annualTable;
+
+    // 绩效报告
+    @FXML private Label lblReportIndicators, lblReportBuyThreshold, lblReportSellThreshold;
+    @FXML private Label lblReportWeights, lblReportFitness, lblReportGen;
+    @FXML private Label lblReportCumReturn, lblReportAnnualReturn, lblReportMaxDD;
+    @FXML private Label lblReportSharpe, lblReportWinRate, lblReportPLRatio, lblReportTradeCount;
 
     // 日志
     @FXML private TextArea txtLog;
@@ -72,7 +80,8 @@ public class MainController {
 
         log("GAQuantBacktest v1.0 启动");
         log("P1: 数据读取 | 技术指标(MA/MACD/RSI/KDJ/BOLL) | GA优化 | 滚动预测 | 回测");
-        log("P2: ATR/CCI | 参数配置 | 绩效统计");
+        log("P2: ATR/CCI/OBV/动量 | 参数配置 | 绩效统计");
+        log("指标候选池: 趋势(MA/MACD) 震荡(RSI/KDJ) 波动(BOLL/ATR) 量价(OBV) 通道(CCI) 动量");
         log("就绪 — 操作流程: 导入CSV → 配置参数 → GA优化 → 回测分析");
     }
 
@@ -116,6 +125,27 @@ public class MainController {
         lblDataStatus.setTextFill(Color.web("#b2bec3"));
     }
 
+    private NumberAxis createDateAxis(String label) {
+        NumberAxis xAxis = new NumberAxis();
+        xAxis.setLabel(label);
+        xAxis.setTickUnit(Math.max(1, currentData.size() / 8.0));
+        xAxis.setTickLabelFormatter(new StringConverter<Number>() {
+            @Override
+            public String toString(Number value) {
+                int idx = (int) Math.round(value.doubleValue());
+                if (idx >= 0 && idx < currentData.size()) {
+                    return currentData.get(idx).getDate().toString();
+                }
+                return "";
+            }
+            @Override
+            public Number fromString(String s) {
+                return 0;
+            }
+        });
+        return xAxis;
+    }
+
     // ==================== 图表绘制 ====================
 
     private void drawAllCharts() {
@@ -124,15 +154,14 @@ public class MainController {
         drawMACDChart();
         drawRSIChart();
         drawKDJChart();
+        drawBOLLChart();
         drawEquityChart();
         drawDrawdownChart();
     }
 
     /** K线 + MA 价格图 */
     private void drawPriceChart() {
-        NumberAxis xAxis = new NumberAxis();
-        xAxis.setLabel("交易日");
-        xAxis.setTickLabelsVisible(false);
+        NumberAxis xAxis = createDateAxis("交易日");
         NumberAxis yAxis = new NumberAxis();
         yAxis.setLabel("价格");
 
@@ -169,7 +198,7 @@ public class MainController {
 
     /** MACD 图 */
     private void drawMACDChart() {
-        NumberAxis xAxis = new NumberAxis(); xAxis.setTickLabelsVisible(false);
+        NumberAxis xAxis = createDateAxis("");
         NumberAxis yAxis = new NumberAxis();
 
         LineChart<Number, Number> chart = new LineChart<>(xAxis, yAxis);
@@ -213,7 +242,7 @@ public class MainController {
 
     /** RSI 图 */
     private void drawRSIChart() {
-        NumberAxis xAxis = new NumberAxis(); xAxis.setTickLabelsVisible(false);
+        NumberAxis xAxis = createDateAxis("");
         NumberAxis yAxis = new NumberAxis(0, 100, 10);
 
         LineChart<Number, Number> chart = new LineChart<>(xAxis, yAxis);
@@ -261,7 +290,7 @@ public class MainController {
 
     /** KDJ 图 */
     private void drawKDJChart() {
-        NumberAxis xAxis = new NumberAxis(); xAxis.setTickLabelsVisible(false);
+        NumberAxis xAxis = createDateAxis("");
         NumberAxis yAxis = new NumberAxis(0, 100, 10);
 
         LineChart<Number, Number> chart = new LineChart<>(xAxis, yAxis);
@@ -299,9 +328,57 @@ public class MainController {
         kdjChartPane.getChildren().setAll(chart);
     }
 
+    /** BOLL 布林带 */
+    private void drawBOLLChart() {
+        NumberAxis xAxis = createDateAxis("");
+        NumberAxis yAxis = new NumberAxis();
+        yAxis.setLabel("价格");
+
+        LineChart<Number, Number> chart = new LineChart<>(xAxis, yAxis);
+        chart.setTitle("BOLL (20,2)");
+        chart.setCreateSymbols(false);
+        chart.setAnimated(false);
+
+        int n = currentData.size();
+        int period = 20;
+        double multiplier = 2.0;
+
+        double[] mid = new double[n];
+        double[] upper = new double[n];
+        double[] lower = new double[n];
+
+        for (int i = period - 1; i < n; i++) {
+            double sum = 0;
+            for (int j = i - period + 1; j <= i; j++)
+                sum += currentData.get(j).getClose();
+            double ma = sum / period;
+            double variance = 0;
+            for (int j = i - period + 1; j <= i; j++)
+                variance += Math.pow(currentData.get(j).getClose() - ma, 2);
+            double std = Math.sqrt(variance / period);
+            mid[i] = ma;
+            upper[i] = ma + multiplier * std;
+            lower[i] = ma - multiplier * std;
+        }
+
+        XYChart.Series<Number, Number> midS = new XYChart.Series<>(); midS.setName("中轨");
+        XYChart.Series<Number, Number> upperS = new XYChart.Series<>(); upperS.setName("上轨");
+        XYChart.Series<Number, Number> lowerS = new XYChart.Series<>(); lowerS.setName("下轨");
+
+        for (int i = period - 1; i < n; i++) {
+            midS.getData().add(new XYChart.Data<>(i, mid[i]));
+            upperS.getData().add(new XYChart.Data<>(i, upper[i]));
+            lowerS.getData().add(new XYChart.Data<>(i, lower[i]));
+        }
+
+        chart.getData().addAll(upperS, midS, lowerS);
+        setChartColors(chart, new String[]{"#0984e3", "#e8e8e8", "#0984e3"});
+        bollChartPane.getChildren().setAll(chart);
+    }
+
     /** 净值曲线 */
     private void drawEquityChart() {
-        NumberAxis xAxis = new NumberAxis(); xAxis.setTickLabelsVisible(false);
+        NumberAxis xAxis = createDateAxis("");
         NumberAxis yAxis = new NumberAxis(); yAxis.setLabel("净值");
 
         LineChart<Number, Number> chart = new LineChart<>(xAxis, yAxis);
@@ -328,7 +405,7 @@ public class MainController {
 
     /** 回撤曲线 */
     private void drawDrawdownChart() {
-        NumberAxis xAxis = new NumberAxis(); xAxis.setTickLabelsVisible(false);
+        NumberAxis xAxis = createDateAxis("");
         NumberAxis yAxis = new NumberAxis(); yAxis.setLabel("回撤 %");
 
         LineChart<Number, Number> chart = new LineChart<>(xAxis, yAxis);
@@ -354,7 +431,7 @@ public class MainController {
 
     /** GA优化后：价格图 + 最优策略生成的买卖信号标记 */
     private void drawPriceChartWithSignals() {
-        NumberAxis xAxis = new NumberAxis(); xAxis.setTickLabelsVisible(false);
+        NumberAxis xAxis = createDateAxis("");
         NumberAxis yAxis = new NumberAxis(); yAxis.setLabel("价格");
 
         LineChart<Number, Number> chart = new LineChart<>(xAxis, yAxis);
@@ -407,7 +484,7 @@ public class MainController {
 
     /** 滚动预测后：展示多窗口训练→预测的完整过程 */
     private void drawPriceChartWithPrediction() {
-        NumberAxis xAxis = new NumberAxis(); xAxis.setTickLabelsVisible(false);
+        NumberAxis xAxis = createDateAxis("");
         NumberAxis yAxis = new NumberAxis(); yAxis.setLabel("价格");
 
         LineChart<Number, Number> chart = new LineChart<>(xAxis, yAxis);
@@ -510,7 +587,7 @@ public class MainController {
 
     /** 回测后：基于交易盈亏的真实净值曲线 */
     private void drawEquityFromBacktest() {
-        NumberAxis xAxis = new NumberAxis(); xAxis.setTickLabelsVisible(false);
+        NumberAxis xAxis = createDateAxis("");
         NumberAxis yAxis = new NumberAxis(); yAxis.setLabel("净值");
 
         LineChart<Number, Number> chart = new LineChart<>(xAxis, yAxis);
@@ -546,7 +623,7 @@ public class MainController {
 
     /** 回测后：从净值曲线计算的真实回撤曲线 */
     private void drawDrawdownFromBacktest() {
-        NumberAxis xAxis = new NumberAxis(); xAxis.setTickLabelsVisible(false);
+        NumberAxis xAxis = createDateAxis("");
         NumberAxis yAxis = new NumberAxis(); yAxis.setLabel("回撤 %");
 
         LineChart<Number, Number> chart = new LineChart<>(xAxis, yAxis);
@@ -594,11 +671,13 @@ public class MainController {
     }
 
     private void setChartColors(LineChart<Number, Number> chart, String[] colors) {
-        for (int i = 0; i < colors.length && i < chart.getData().size(); i++) {
-            final int idx = i;
-            chart.lookupAll(".series" + idx).forEach(n ->
-                    n.setStyle("-fx-stroke:" + colors[idx] + ";"));
-        }
+        Platform.runLater(() -> {
+            for (int i = 0; i < colors.length && i < chart.getData().size(); i++) {
+                final int idx = i;
+                chart.lookupAll(".series" + idx).forEach(n ->
+                        n.setStyle("-fx-stroke: " + colors[idx] + ";"));
+            }
+        });
     }
 
     // ==================== 回测结果 ====================
@@ -665,6 +744,33 @@ public class MainController {
         lblSignalScore.setText(String.format("得分:%.2f", 0.5 + rng.nextDouble() * 0.45));
         lblGAStatus.setText("已完成"); lblGAStatus.setTextFill(Color.web("#00b894"));
         lblBacktestStatus.setText("已完成"); lblBacktestStatus.setTextFill(Color.web("#00b894"));
+
+        populateReport();
+    }
+
+    /** 填充绩效报告面板（原型阶段使用演示数据） */
+    private void populateReport() {
+        // 策略详情
+        lblReportIndicators.setText("MA(5,20,60)  MACD(12,26,9)  RSI(14)  BOLL(20,2)");
+        lblReportBuyThreshold.setText("0.72");
+        lblReportBuyThreshold.setTextFill(Color.web("#00b894"));
+        lblReportSellThreshold.setText("-0.35");
+        lblReportSellThreshold.setTextFill(Color.web("#d63031"));
+        lblReportWeights.setText("MA:0.35  MACD:0.28  RSI:0.22  BOLL:0.15");
+        lblReportFitness.setText(String.format("%.3f", 2.5 + rng.nextDouble() * 1.2));
+        lblReportGen.setText("第 " + (25 + rng.nextInt(25)) + " 代");
+
+        // 综合绩效
+        lblReportCumReturn.setText(lblCumReturn.getText());
+        lblReportCumReturn.setTextFill(lblCumReturn.getTextFill());
+        lblReportAnnualReturn.setText(lblAnnualReturn.getText());
+        lblReportAnnualReturn.setTextFill(lblAnnualReturn.getTextFill());
+        lblReportMaxDD.setText(lblMaxDrawdown.getText());
+        lblReportMaxDD.setTextFill(Color.web("#d63031"));
+        lblReportSharpe.setText(lblSharpeRatio.getText());
+        lblReportWinRate.setText(lblWinRate.getText());
+        lblReportPLRatio.setText(lblPLRatio.getText());
+        lblReportTradeCount.setText(lblTradeCount.getText());
     }
 
     // ==================== 事件处理 ====================
@@ -784,7 +890,7 @@ public class MainController {
         log("=== 使用说明 ===");
         log("① 导入CSV数据 (文件→导入CSV, 格式:Date,Open,High,Low,Close,Volume)");
         log("② 参数配置 → ③ GA优化 → ④ 滚动预测 → ⑤ 回测分析");
-        log("P1: MA/MACD/RSI/KDJ/BOLL | P2: ATR/CCI");
+        log("P1: MA/MACD/RSI/KDJ/BOLL | P2: ATR/CCI/OBV/动量");
     }
 
     @FXML public void onAbout() {
@@ -794,7 +900,8 @@ public class MainController {
         a.setContentText("基于遗传算法的多技术指标滚动交易时机预测系统\n\n"
                 + "Java 21 + JavaFX | 2026年7月\n"
                 + "P1: 数据读取+技术指标+GA+回测\n"
-                + "P2: 扩展指标+参数配置+绩效统计");
+                + "P2: 扩展指标+参数配置+绩效统计\n"
+                + "指标池: MA/MACD/RSI/KDJ/BOLL/ATR/CCI/OBV/动量");
         a.showAndWait();
     }
 
