@@ -1,0 +1,20 @@
+# 默认忽略的文件
+/shelf/
+/workspace.xml
+# 基于编辑器的 HTTP 客户端请求
+/httpRequests/
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
+# IDEA 全部本地配置
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Maven编译输出
+target/
+*.class
+*.lst
+"@

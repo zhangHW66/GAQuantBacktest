@@ -1,20 +1,17 @@
 package com.gaquant.backtest;
 
+import com.gaquant.model.EvaluationResult;
 import com.gaquant.model.TradeRecord;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-/** 绩效评估 */
+/** 绩效评估：统计指标 + 净值曲线 + 年度汇总 */
 public class Evaluator {
-    public Map<String, Double> evaluate(List<TradeRecord> trades, double initCapital) {
-        return Map.of(
-            "cumulativeReturn", 0.0,
-            "annualReturn", 0.0,
-            "maxDrawdown", 0.0,
-            "winRate", 0.0,
-            "profitLossRatio", 0.0,
-            "sharpeRatio", 0.0,
-            "tradeCount", 0.0
-        );
+
+    public EvaluationResult evaluate(List<TradeRecord> trades, double initCapital) {
+        EvaluationResult result = new EvaluationResult();
+        result.setNetValueCurve(new ArrayList<>());
+        result.setAnnualSummaries(new ArrayList<>());
+        // TODO: 实现评估逻辑（Step 4）
+        return result;
     }
 }

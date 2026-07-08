@@ -11,8 +11,8 @@ public class Chromosome {
     // 指标启用状态 (MA, MACD, RSI, KDJ, BOLL, ATR, CCI)
     private Map<String, Boolean> indicatorEnabled;
 
-    // 指标参数 (如 MA: [5,10,20,60], RSI: [6,12,24])
-    private Map<String, int[]> indicatorParams;
+    // 指标参数 (如 MA: [5], [10], [20], 从候选池中选择)
+    private Map<String, double[]> indicatorParams;
 
     // 指标权重 (各指标信号在最终决策中的权重)
     private Map<String, Double> indicatorWeights;
@@ -34,8 +34,8 @@ public class Chromosome {
     public Map<String, Boolean> getIndicatorEnabled() { return indicatorEnabled; }
     public void setIndicatorEnabled(Map<String, Boolean> indicatorEnabled) { this.indicatorEnabled = indicatorEnabled; }
 
-    public Map<String, int[]> getIndicatorParams() { return indicatorParams; }
-    public void setIndicatorParams(Map<String, int[]> indicatorParams) { this.indicatorParams = indicatorParams; }
+    public Map<String, double[]> getIndicatorParams() { return indicatorParams; }
+    public void setIndicatorParams(Map<String, double[]> indicatorParams) { this.indicatorParams = indicatorParams; }
 
     public Map<String, Double> getIndicatorWeights() { return indicatorWeights; }
     public void setIndicatorWeights(Map<String, Double> indicatorWeights) { this.indicatorWeights = indicatorWeights; }

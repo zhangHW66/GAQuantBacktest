@@ -6,9 +6,10 @@ import java.util.Map;
 
 /**
  * 技术指标计算服务
+ * 指标候选池: MA, MACD, RSI, KDJ, BOLL, ATR, CCI, OBV, Momentum
  */
 public class IndicatorService {
-    public Map<String, List<Double>> calculateAll(List<StockData> data, Map<String, int[]> params) {
+    public Map<String, List<Double>> calculateAll(List<StockData> data, Map<String, double[]> params) {
         return Map.of();
     }
 }

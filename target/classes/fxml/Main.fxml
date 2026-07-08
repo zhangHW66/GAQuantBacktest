@@ -77,8 +77,6 @@
                     <padding><Insets top="4" right="4" bottom="4" left="4"/></padding>
                     <CheckBox text="ATR 均幅指标" fx:id="chkATR"/>
                     <CheckBox text="CCI 商品通道" fx:id="chkCCI"/>
-                    <CheckBox text="OBV 能量潮" fx:id="chkOBV"/>
-                    <CheckBox text="Momentum 动量" fx:id="chkMomentum"/>
                 </VBox>
             </TitledPane>
 
@@ -164,7 +162,7 @@
                 </Tab>
 
                 <!-- 指标详情 -->
-                <Tab text="技术指标详情">
+                <Tab text="MACD / RSI / KDJ">
                     <TabPane fx:id="indicatorTabPane" tabClosingPolicy="UNAVAILABLE" side="BOTTOM">
                         <Tab text="MACD">
                             <StackPane fx:id="macdChartPane" styleClass="chart-area" minHeight="250"/>
@@ -174,9 +172,6 @@
                         </Tab>
                         <Tab text="KDJ">
                             <StackPane fx:id="kdjChartPane" styleClass="chart-area" minHeight="250"/>
-                        </Tab>
-                        <Tab text="BOLL">
-                            <StackPane fx:id="bollChartPane" styleClass="chart-area" minHeight="250"/>
                         </Tab>
                     </TabPane>
                 </Tab>
@@ -207,86 +202,6 @@
                             <TableColumn text="持仓天数" prefWidth="70"/>
                         </columns>
                     </TableView>
-                </Tab>
-
-                <!-- 绩效报告 -->
-                <Tab text="绩效报告">
-                    <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS">
-                        <VBox spacing="10">
-                            <padding><Insets top="10" right="14" bottom="10" left="14"/></padding>
-
-                            <!-- 策略详情 -->
-                            <TitledPane text="最优策略详情" collapsible="false"
-                                        style="-fx-font-size:13px; -fx-font-weight:bold;">
-                                <GridPane hgap="24" vgap="8">
-                                    <padding><Insets top="10" right="14" bottom="10" left="14"/></padding>
-                                    <Label text="选中指标：" GridPane.rowIndex="0" GridPane.columnIndex="0"
-                                           style="-fx-font-weight:bold;"/>
-                                    <Label fx:id="lblReportIndicators" text="—" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
-                                    <Label text="买入阈值：" GridPane.rowIndex="1" GridPane.columnIndex="0"
-                                           style="-fx-font-weight:bold;"/>
-                                    <Label fx:id="lblReportBuyThreshold" text="—" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
-                                    <Label text="卖出阈值：" GridPane.rowIndex="2" GridPane.columnIndex="0"
-                                           style="-fx-font-weight:bold;"/>
-                                    <Label fx:id="lblReportSellThreshold" text="—" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
-                                    <Label text="指标权重：" GridPane.rowIndex="3" GridPane.columnIndex="0"
-                                           style="-fx-font-weight:bold;"/>
-                                    <Label fx:id="lblReportWeights" text="—" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
-                                    <Label text="最优适应度：" GridPane.rowIndex="4" GridPane.columnIndex="0"
-                                           style="-fx-font-weight:bold;"/>
-                                    <Label fx:id="lblReportFitness" text="—" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
-                                    <Label text="收敛于：" GridPane.rowIndex="5" GridPane.columnIndex="0"
-                                           style="-fx-font-weight:bold;"/>
-                                    <Label fx:id="lblReportGen" text="—" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
-                                </GridPane>
-                            </TitledPane>
-
-                            <!-- 综合绩效指标 -->
-                            <TitledPane text="综合绩效指标" collapsible="false"
-                                        style="-fx-font-size:13px; -fx-font-weight:bold;">
-                                <GridPane hgap="24" vgap="8">
-                                    <padding><Insets top="10" right="14" bottom="10" left="14"/></padding>
-                                    <Label text="累计收益率：" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
-                                    <Label fx:id="lblReportCumReturn" text="—" GridPane.rowIndex="0" GridPane.columnIndex="1"
-                                           style="-fx-font-size:15px;"/>
-                                    <Label text="年化收益率：" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
-                                    <Label fx:id="lblReportAnnualReturn" text="—" GridPane.rowIndex="0" GridPane.columnIndex="3"
-                                           style="-fx-font-size:15px;"/>
-                                    <Label text="最大回撤：" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
-                                    <Label fx:id="lblReportMaxDD" text="—" GridPane.rowIndex="1" GridPane.columnIndex="1"
-                                           style="-fx-font-size:15px;"/>
-                                    <Label text="夏普比率：" GridPane.rowIndex="1" GridPane.columnIndex="2"/>
-                                    <Label fx:id="lblReportSharpe" text="—" GridPane.rowIndex="1" GridPane.columnIndex="3"
-                                           style="-fx-font-size:15px;"/>
-                                    <Label text="交易胜率：" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
-                                    <Label fx:id="lblReportWinRate" text="—" GridPane.rowIndex="2" GridPane.columnIndex="1"
-                                           style="-fx-font-size:15px;"/>
-                                    <Label text="盈亏比：" GridPane.rowIndex="2" GridPane.columnIndex="2"/>
-                                    <Label fx:id="lblReportPLRatio" text="—" GridPane.rowIndex="2" GridPane.columnIndex="3"
-                                           style="-fx-font-size:15px;"/>
-                                    <Label text="交易总次数：" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
-                                    <Label fx:id="lblReportTradeCount" text="—" GridPane.rowIndex="3" GridPane.columnIndex="1"
-                                           style="-fx-font-size:15px;"/>
-                                </GridPane>
-                            </TitledPane>
-
-                            <!-- 年度汇总表 -->
-                            <TitledPane text="年度汇总统计" collapsible="false" VBox.vgrow="ALWAYS"
-                                        style="-fx-font-size:13px; -fx-font-weight:bold;">
-                                <TableView fx:id="annualTable" minHeight="200">
-                                    <columns>
-                                        <TableColumn text="年度" prefWidth="80"/>
-                                        <TableColumn text="收益率" prefWidth="90"/>
-                                        <TableColumn text="最大回撤" prefWidth="90"/>
-                                        <TableColumn text="夏普比率" prefWidth="90"/>
-                                        <TableColumn text="胜率" prefWidth="80"/>
-                                        <TableColumn text="盈亏比" prefWidth="80"/>
-                                        <TableColumn text="交易次数" prefWidth="80"/>
-                                    </columns>
-                                </TableView>
-                            </TitledPane>
-                        </VBox>
-                    </ScrollPane>
                 </Tab>
             </TabPane>
 
