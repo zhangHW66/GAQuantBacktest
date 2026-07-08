@@ -12,3 +12,9 @@
 *.iws
 *.ipr
 out/
+
+# Maven编译输出
+target/
+*.class
+*.lst
+"@
