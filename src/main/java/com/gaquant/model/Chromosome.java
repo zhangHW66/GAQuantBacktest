@@ -48,4 +48,20 @@ public class Chromosome {
 
     public double getFitness() { return fitness; }
     public void setFitness(double fitness) { this.fitness = fitness; }
+
+    /** 深拷贝 */
+    public Chromosome copy() {
+        Chromosome c = new Chromosome();
+        c.indicatorEnabled = new HashMap<>(this.indicatorEnabled);
+        c.indicatorWeights = new HashMap<>(this.indicatorWeights);
+        Map<String, double[]> paramsCopy = new HashMap<>();
+        for (var e : this.indicatorParams.entrySet()) {
+            paramsCopy.put(e.getKey(), e.getValue().clone());
+        }
+        c.indicatorParams = paramsCopy;
+        c.buyThreshold = this.buyThreshold;
+        c.sellThreshold = this.sellThreshold;
+        c.fitness = this.fitness;
+        return c;
+    }
 }
