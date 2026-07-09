@@ -19,8 +19,9 @@ public class AppConfig {
     private double maxPosition = 0.30;
 
     // 滚动窗口参数
-    private int trainPeriod = 3;  // 月
-    private int testPeriod = 1;   // 月
+    private int trainPeriod = 3;    // 月（日线=63根，月线=3根）
+    private int testPeriod = 1;     // 月（日线=21根，月线=1根）
+    private int barsPerMonth = 21;  // 每月约合多少根K线（日线21，月线1）
     private int minDataSize = 100;
 
     // 数据源
@@ -70,6 +71,9 @@ public class AppConfig {
 
     public int getMinDataSize() { return minDataSize; }
     public void setMinDataSize(int minDataSize) { this.minDataSize = minDataSize; }
+
+    public int getBarsPerMonth() { return barsPerMonth; }
+    public void setBarsPerMonth(int barsPerMonth) { this.barsPerMonth = barsPerMonth; }
 
     public String getCsvPath() { return csvPath; }
     public void setCsvPath(String csvPath) { this.csvPath = csvPath; }

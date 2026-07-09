@@ -58,7 +58,8 @@
             <Button text="① 导入CSV数据" maxWidth="Infinity" onAction="#onImportCsv"/>
             <Button text="② 配置参数" maxWidth="Infinity" onAction="#onOpenConfig"/>
             <Button text="③ 运行GA优化" maxWidth="Infinity" onAction="#onRunGA"/>
-            <Button text="④ 回测分析" maxWidth="Infinity" styleClass="success" onAction="#onRunBacktest"/>
+            <Button text="④ 滚动预测" maxWidth="Infinity" onAction="#onRollingPredict"/>
+            <Button text="⑤ 回测分析" maxWidth="Infinity" styleClass="success" onAction="#onRunBacktest"/>
 
             <Separator/>
 
@@ -178,6 +179,18 @@
                         <Tab text="BOLL">
                             <StackPane fx:id="bollChartPane" styleClass="chart-area" minHeight="250"/>
                         </Tab>
+                        <Tab text="ATR">
+                            <StackPane fx:id="atrChartPane" styleClass="chart-area" minHeight="250"/>
+                        </Tab>
+                        <Tab text="CCI">
+                            <StackPane fx:id="cciChartPane" styleClass="chart-area" minHeight="250"/>
+                        </Tab>
+                        <Tab text="OBV">
+                            <StackPane fx:id="obvChartPane" styleClass="chart-area" minHeight="250"/>
+                        </Tab>
+                        <Tab text="Momentum">
+                            <StackPane fx:id="momentumChartPane" styleClass="chart-area" minHeight="250"/>
+                        </Tab>
                     </TabPane>
                 </Tab>
 
@@ -186,6 +199,9 @@
                     <TabPane tabClosingPolicy="UNAVAILABLE" side="BOTTOM">
                         <Tab text="净值曲线">
                             <StackPane fx:id="equityChartPane" styleClass="chart-area" minHeight="250"/>
+                        </Tab>
+                        <Tab text="收益曲线">
+                            <StackPane fx:id="returnChartPane" styleClass="chart-area" minHeight="250"/>
                         </Tab>
                         <Tab text="回撤曲线">
                             <StackPane fx:id="drawdownChartPane" styleClass="chart-area" minHeight="250"/>
