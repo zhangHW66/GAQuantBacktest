@@ -40,7 +40,8 @@ public class MainController {
     // 图表
     @FXML private TabPane tabPane;
     @FXML private StackPane klineChartPane, macdChartPane, rsiChartPane, kdjChartPane, bollChartPane;
-    @FXML private StackPane equityChartPane, drawdownChartPane;
+    @FXML private StackPane atrChartPane, cciChartPane, obvChartPane, momentumChartPane;
+    @FXML private StackPane equityChartPane, returnChartPane, drawdownChartPane;
     @FXML private Label klinePlaceholder;
     @FXML private ComboBox<String> cboKlinePeriod;
 
@@ -78,11 +79,22 @@ public class MainController {
             cboKlinePeriod.setValue("日线");
         }
 
+        // CheckBox联动：勾选/取消时重绘对应图表
+        chkMA.setOnAction(e -> drawPriceChart());
+        chkMACD.setOnAction(e -> drawMACDChart());
+        chkRSI.setOnAction(e -> drawRSIChart());
+        chkKDJ.setOnAction(e -> drawKDJChart());
+        chkBOLL.setOnAction(e -> drawBOLLChart());
+        chkATR.setOnAction(e -> drawATRChart());
+        chkCCI.setOnAction(e -> drawCCIChart());
+        chkOBV.setOnAction(e -> drawOBVChart());
+        chkMomentum.setOnAction(e -> drawMomentumChart());
+
         log("GAQuantBacktest v1.0 启动");
         log("P1: 数据读取 | 技术指标(MA/MACD/RSI/KDJ/BOLL) | GA优化 | 滚动预测 | 回测");
         log("P2: ATR/CCI/OBV/动量 | 参数配置 | 绩效统计");
         log("指标候选池: 趋势(MA/MACD) 震荡(RSI/KDJ) 波动(BOLL/ATR) 量价(OBV) 通道(CCI) 动量");
-        log("就绪 — 操作流程: 导入CSV → 配置参数 → GA优化 → 回测分析");
+        log("就绪 — 操作流程: 导入CSV → 配置参数 → GA优化 → 滚动预测 → 回测分析");
     }
 
     // ==================== 数据加载 ====================
@@ -155,18 +167,23 @@ public class MainController {
         drawRSIChart();
         drawKDJChart();
         drawBOLLChart();
+        drawATRChart();
+        drawCCIChart();
+        drawOBVChart();
+        drawMomentumChart();
         drawEquityChart();
+        drawReturnChart();
         drawDrawdownChart();
     }
 
-    /** K线 + MA 价格图 */
+    /** K线 + MA 价格图（含MA5/20交叉买卖信号） */
     private void drawPriceChart() {
         NumberAxis xAxis = createDateAxis("交易日");
         NumberAxis yAxis = new NumberAxis();
         yAxis.setLabel("价格");
 
         LineChart<Number, Number> chart = new LineChart<>(xAxis, yAxis);
-        chart.setTitle("收盘价 & MA均线");
+        chart.setTitle("收盘价 & MA均线  [▲买入信号  ▼卖出信号 — MA5/MA20交叉策略]");
         chart.setCreateSymbols(false);
         chart.setAnimated(false);
 
@@ -178,26 +195,67 @@ public class MainController {
 
         chart.getData().add(close);
 
-        // 添加 MA5, MA10, MA20
-        for (int period : new int[]{5, 10, 20}) {
-            XYChart.Series<Number, Number> ma = new XYChart.Series<>();
-            ma.setName("MA" + period);
-            for (int i = 0; i < n; i++) {
-                if (i < period - 1) continue;
-                double sum = 0;
-                for (int j = i - period + 1; j <= i; j++)
-                    sum += currentData.get(j).getClose();
-                ma.getData().add(new XYChart.Data<>(i, sum / period));
+        // 预计算MA5和MA20用于信号标注
+        double[] ma5 = new double[n];
+        double[] ma20 = new double[n];
+        for (int i = 0; i < n; i++) {
+            if (i >= 4) {
+                double sum5 = 0;
+                for (int j = i - 4; j <= i; j++) sum5 += currentData.get(j).getClose();
+                ma5[i] = sum5 / 5;
             }
-            chart.getData().add(ma);
+            if (i >= 19) {
+                double sum20 = 0;
+                for (int j = i - 19; j <= i; j++) sum20 += currentData.get(j).getClose();
+                ma20[i] = sum20 / 20;
+            }
         }
 
-        setChartColors(chart, new String[]{"#c8d6e5", "#00b894", "#0984e3", "#a29bfe"});
+        // 添加 MA5, MA10, MA20（根据chkMA状态）
+        if (chkMA.isSelected()) {
+            for (int period : new int[]{5, 10, 20}) {
+                XYChart.Series<Number, Number> ma = new XYChart.Series<>();
+                ma.setName("MA" + period);
+                for (int i = 0; i < n; i++) {
+                    if (i < period - 1) continue;
+                    double sum = 0;
+                    for (int j = i - period + 1; j <= i; j++)
+                        sum += currentData.get(j).getClose();
+                    ma.getData().add(new XYChart.Data<>(i, sum / period));
+                }
+                chart.getData().add(ma);
+            }
+        }
+
+        // 买卖信号标注（MA5/MA20金叉死叉）
+        XYChart.Series<Number, Number> buys = new XYChart.Series<>();
+        buys.setName("买入▲");
+        XYChart.Series<Number, Number> sells = new XYChart.Series<>();
+        sells.setName("卖出▼");
+
+        boolean holding = false;
+        for (int i = 20; i < n; i++) {
+            if (ma5[i] == 0 || ma20[i] == 0) continue;
+            if (ma5[i] > ma20[i] && ma5[i-1] <= ma20[i-1] && !holding) {
+                buys.getData().add(new XYChart.Data<>(i, currentData.get(i).getLow() * 0.985));
+                holding = true;
+            } else if (ma5[i] < ma20[i] && ma5[i-1] >= ma20[i-1] && holding) {
+                sells.getData().add(new XYChart.Data<>(i, currentData.get(i).getHigh() * 1.015));
+                holding = false;
+            }
+        }
+
+        chart.getData().addAll(buys, sells);
+        setChartColors(chart, new String[]{"#c8d6e5", "#00b894", "#0984e3", "#a29bfe", "#00ff88", "#ff4444"});
         klineChartPane.getChildren().setAll(chart);
     }
 
     /** MACD 图 */
     private void drawMACDChart() {
+        if (!chkMACD.isSelected()) {
+            macdChartPane.getChildren().setAll(createDisabledLabel("MACD — 已禁用"));
+            return;
+        }
         NumberAxis xAxis = createDateAxis("");
         NumberAxis yAxis = new NumberAxis();
 
@@ -242,6 +300,10 @@ public class MainController {
 
     /** RSI 图 */
     private void drawRSIChart() {
+        if (!chkRSI.isSelected()) {
+            rsiChartPane.getChildren().setAll(createDisabledLabel("RSI — 已禁用"));
+            return;
+        }
         NumberAxis xAxis = createDateAxis("");
         NumberAxis yAxis = new NumberAxis(0, 100, 10);
 
@@ -290,6 +352,10 @@ public class MainController {
 
     /** KDJ 图 */
     private void drawKDJChart() {
+        if (!chkKDJ.isSelected()) {
+            kdjChartPane.getChildren().setAll(createDisabledLabel("KDJ — 已禁用"));
+            return;
+        }
         NumberAxis xAxis = createDateAxis("");
         NumberAxis yAxis = new NumberAxis(0, 100, 10);
 
@@ -330,6 +396,10 @@ public class MainController {
 
     /** BOLL 布林带 */
     private void drawBOLLChart() {
+        if (!chkBOLL.isSelected()) {
+            bollChartPane.getChildren().setAll(createDisabledLabel("BOLL 布林带 — 已禁用"));
+            return;
+        }
         NumberAxis xAxis = createDateAxis("");
         NumberAxis yAxis = new NumberAxis();
         yAxis.setLabel("价格");
@@ -374,6 +444,170 @@ public class MainController {
         chart.getData().addAll(upperS, midS, lowerS);
         setChartColors(chart, new String[]{"#0984e3", "#e8e8e8", "#0984e3"});
         bollChartPane.getChildren().setAll(chart);
+    }
+
+    /** ATR 均幅指标 */
+    private void drawATRChart() {
+        if (!chkATR.isSelected()) {
+            atrChartPane.getChildren().setAll(createDisabledLabel("ATR 均幅指标 — 已禁用"));
+            return;
+        }
+        NumberAxis xAxis = createDateAxis("");
+        NumberAxis yAxis = new NumberAxis(); yAxis.setLabel("ATR");
+
+        LineChart<Number, Number> chart = new LineChart<>(xAxis, yAxis);
+        chart.setTitle("ATR (14) — 平均真实波幅");
+        chart.setCreateSymbols(false); chart.setAnimated(false);
+
+        int n = currentData.size(), period = 14;
+        XYChart.Series<Number, Number> atrS = new XYChart.Series<>(); atrS.setName("ATR14");
+
+        double atr = 0;
+        for (int i = 1; i < n; i++) {
+            double tr = Math.max(
+                currentData.get(i).getHigh() - currentData.get(i).getLow(),
+                Math.max(
+                    Math.abs(currentData.get(i).getHigh() - currentData.get(i-1).getClose()),
+                    Math.abs(currentData.get(i).getLow() - currentData.get(i-1).getClose())));
+            if (i <= period) { atr += tr; if (i == period) atr /= period; }
+            else atr = (atr * (period - 1) + tr) / period;
+            if (i >= period) atrS.getData().add(new XYChart.Data<>(i, atr));
+        }
+        chart.getData().add(atrS);
+        setChartColors(chart, new String[]{"#e17055"});
+        atrChartPane.getChildren().setAll(chart);
+    }
+
+    /** CCI 商品通道指标 */
+    private void drawCCIChart() {
+        if (!chkCCI.isSelected()) {
+            cciChartPane.getChildren().setAll(createDisabledLabel("CCI 商品通道指标 — 已禁用"));
+            return;
+        }
+        NumberAxis xAxis = createDateAxis("");
+        NumberAxis yAxis = new NumberAxis(); yAxis.setLabel("CCI");
+
+        LineChart<Number, Number> chart = new LineChart<>(xAxis, yAxis);
+        chart.setTitle("CCI (14) — 商品通道指数");
+        chart.setCreateSymbols(false); chart.setAnimated(false);
+
+        int n = currentData.size(), period = 14;
+        XYChart.Series<Number, Number> cciS = new XYChart.Series<>(); cciS.setName("CCI14");
+
+        for (int i = period - 1; i < n; i++) {
+            double sumTP = 0;
+            for (int j = i - period + 1; j <= i; j++)
+                sumTP += (currentData.get(j).getHigh() + currentData.get(j).getLow() + currentData.get(j).getClose()) / 3;
+            double maTP = sumTP / period;
+            double md = 0;
+            for (int j = i - period + 1; j <= i; j++)
+                md += Math.abs((currentData.get(j).getHigh() + currentData.get(j).getLow() + currentData.get(j).getClose()) / 3 - maTP);
+            double cci = (md / period) == 0 ? 0 : ((currentData.get(i).getHigh() + currentData.get(i).getLow() + currentData.get(i).getClose()) / 3 - maTP) / (0.015 * md / period);
+            cciS.getData().add(new XYChart.Data<>(i, cci));
+        }
+
+        // ±100参考线
+        int n2 = n;
+        XYChart.Series<Number, Number> line100 = new XYChart.Series<>(); line100.setName("+100");
+        XYChart.Series<Number, Number> lineM100 = new XYChart.Series<>(); lineM100.setName("-100");
+        line100.getData().addAll(new XYChart.Data<>(0, 100), new XYChart.Data<>(n2-1, 100));
+        lineM100.getData().addAll(new XYChart.Data<>(0, -100), new XYChart.Data<>(n2-1, -100));
+
+        chart.getData().addAll(cciS, line100, lineM100);
+        setChartColors(chart, new String[]{"#fd79a8", "#636e72", "#636e72"});
+        cciChartPane.getChildren().setAll(chart);
+    }
+
+    /** OBV 能量潮 */
+    private void drawOBVChart() {
+        if (!chkOBV.isSelected()) {
+            obvChartPane.getChildren().setAll(createDisabledLabel("OBV 能量潮 — 已禁用"));
+            return;
+        }
+        NumberAxis xAxis = createDateAxis("");
+        NumberAxis yAxis = new NumberAxis(); yAxis.setLabel("OBV");
+
+        LineChart<Number, Number> chart = new LineChart<>(xAxis, yAxis);
+        chart.setTitle("OBV — 能量潮（成交量累积）");
+        chart.setCreateSymbols(false); chart.setAnimated(false);
+
+        int n = currentData.size();
+        XYChart.Series<Number, Number> obvS = new XYChart.Series<>(); obvS.setName("OBV");
+
+        double obv = 0;
+        obvS.getData().add(new XYChart.Data<>(0, 0.0));
+        for (int i = 1; i < n; i++) {
+            if (currentData.get(i).getClose() > currentData.get(i-1).getClose())
+                obv += currentData.get(i).getVolume();
+            else if (currentData.get(i).getClose() < currentData.get(i-1).getClose())
+                obv -= currentData.get(i).getVolume();
+            obvS.getData().add(new XYChart.Data<>(i, obv));
+        }
+        chart.getData().add(obvS);
+        setChartColors(chart, new String[]{"#74b9ff"});
+        obvChartPane.getChildren().setAll(chart);
+    }
+
+    /** Momentum 动量 */
+    private void drawMomentumChart() {
+        if (!chkMomentum.isSelected()) {
+            momentumChartPane.getChildren().setAll(createDisabledLabel("Momentum 动量 — 已禁用"));
+            return;
+        }
+        NumberAxis xAxis = createDateAxis("");
+        NumberAxis yAxis = new NumberAxis(); yAxis.setLabel("动量");
+
+        LineChart<Number, Number> chart = new LineChart<>(xAxis, yAxis);
+        chart.setTitle("Momentum (10) — 价格动量");
+        chart.setCreateSymbols(false); chart.setAnimated(false);
+
+        int n = currentData.size(), period = 10;
+        XYChart.Series<Number, Number> momS = new XYChart.Series<>(); momS.setName("MOM10");
+
+        for (int i = period; i < n; i++) {
+            double mom = currentData.get(i).getClose() / currentData.get(i - period).getClose() * 100;
+            momS.getData().add(new XYChart.Data<>(i, mom));
+        }
+
+        // 100基准线
+        XYChart.Series<Number, Number> base = new XYChart.Series<>(); base.setName("100");
+        base.getData().addAll(new XYChart.Data<>(0, 100.0), new XYChart.Data<>(n-1, 100.0));
+
+        chart.getData().addAll(momS, base);
+        setChartColors(chart, new String[]{"#ffeaa7", "#636e72"});
+        momentumChartPane.getChildren().setAll(chart);
+    }
+
+    /** 收益曲线（每日收益率） */
+    private void drawReturnChart() {
+        NumberAxis xAxis = createDateAxis("");
+        NumberAxis yAxis = new NumberAxis(); yAxis.setLabel("收益率 %");
+
+        LineChart<Number, Number> chart = new LineChart<>(xAxis, yAxis);
+        chart.setTitle("每日收益率曲线");
+        chart.setCreateSymbols(false); chart.setAnimated(false);
+
+        int n = currentData.size();
+        XYChart.Series<Number, Number> retS = new XYChart.Series<>(); retS.setName("日收益率");
+        for (int i = 1; i < n; i++) {
+            double ret = (currentData.get(i).getClose() - currentData.get(i-1).getClose()) / currentData.get(i-1).getClose() * 100;
+            retS.getData().add(new XYChart.Data<>(i, ret));
+        }
+
+        // 零线
+        XYChart.Series<Number, Number> zero = new XYChart.Series<>(); zero.setName("0%");
+        zero.getData().addAll(new XYChart.Data<>(0, 0.0), new XYChart.Data<>(n-1, 0.0));
+
+        chart.getData().addAll(retS, zero);
+        setChartColors(chart, new String[]{"#0984e3", "#636e72"});
+        returnChartPane.getChildren().setAll(chart);
+    }
+
+    /** 创建"已禁用"占位标签 */
+    private Label createDisabledLabel(String text) {
+        Label label = new Label(text);
+        label.setStyle("-fx-text-fill:#636e72; -fx-font-size:16px;");
+        return label;
     }
 
     /** 净值曲线 */
@@ -889,8 +1123,8 @@ public class MainController {
     @FXML public void onHelp() {
         log("=== 使用说明 ===");
         log("① 导入CSV数据 (文件→导入CSV, 格式:Date,Open,High,Low,Close,Volume)");
-        log("② 参数配置 → ③ GA优化 → ④ 滚动预测 → ⑤ 回测分析");
-        log("P1: MA/MACD/RSI/KDJ/BOLL | P2: ATR/CCI/OBV/动量");
+        log("② 参数配置 → ③ 运行GA优化 → ④ 滚动预测 → ⑤ 回测分析");
+        log("左侧CheckBox可实时切换技术指标显示");
     }
 
     @FXML public void onAbout() {
